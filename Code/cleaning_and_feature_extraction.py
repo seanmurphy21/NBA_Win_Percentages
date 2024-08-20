@@ -218,6 +218,29 @@ nba_df[(nba_df['Season']!=2021) & (nba_df['Attendance_Per_Game'].isnull())][['Te
 # since we don't want to lose 2021 season data, we will simply remove the Attendance_Per_Game column
 nba_df = nba_df.drop('Attendance_Per_Game', axis = 1)
 
+# add a column indicating whether or not a team finished above .500
+nba_df['Winning_Record'] = nba_df['Win_Percentage'].apply(lambda x: np.where(x>.5, 1, 0))
+
+# create a dictionary with the highest net-ranked team in each season
+highest_net_dict = {}
+for season in range(1980,2025,1):
+    # grab the index location of the highest ranked team
+    highest_index = nba_df[nba_df['Season']==season]['Net_Rating'].idxmax()
+    # grab the team associated with that index location
+    highest_team = nba_df.iloc[highest_index]['Team']
+    # add the team and the year to the dictionary
+    highest_net_dict[season] = highest_team
+
+# define a function to indicate whether a team had the highest net rating for a particular season
+def had_highest_net_rating(season, team):
+    if highest_net_dict[season] == team:
+        return 1
+    else:
+        return 0
+    
+# add the column indicating whether the team had the highest net rating for that particular season
+nba_df['Highest_Net_Rating'] = nba_df.apply(lambda x: had_highest_net_rating(x.Season, x.Team), axis = 1)
+
 # data is ready for analysis, export the data
 nba_df.to_csv('cleaned_nba_team_stats.csv', index = False)
 
